@@ -13,7 +13,6 @@ class ContactManager {
      * @returns {Object} Result object with success status and message
      */
     addContact(first, last, email, phone) {
-        s
         if (!first.trim() || !last.trim() || !email.trim() || !phone.trim()) {
             return { success: false, message: 'First name, last name, email, and phone are required' };
         }
