@@ -1,0 +1,6 @@
+.card h3 { color: #34C759; }
+.card textarea { font-family: 'Monaco', 'Courier New', monospace; font-size: 13px; }
+.list li { transition: background 0.2s; }
+.list li:hover { background: #f9f9f9; }
+button.success:hover { background: #2eaa4e; }
+button.primary:hover { background: #0056b3; }

@@ -1,0 +1,6 @@
+.card h3 { color: #0a5bd3; }
+.card #vDisplay { font-weight: 600; color: #0a5bd3; }
+.list li { transition: background 0.2s; }
+.list li:hover { background: #f0f7ff; }
+button { transition: background 0.2s, transform 0.1s; }
+button:active { transform: scale(0.98); }

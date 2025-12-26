@@ -1,0 +1,6 @@
+.card h3 { color: #0056b3; }
+.card input:focus { border-color: #0a84ff; background: #f0f7ff; }
+.list li { transition: background 0.2s; }
+.list li:hover { background: #f9f9f9; }
+button { transition: background 0.2s, border-color 0.2s; }
+button:hover { opacity: 0.85; }

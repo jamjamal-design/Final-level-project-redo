@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root { --primary: #0d6efd; --success: #198754; --danger: #dc3545; --warning: #ffc107; --info: #0dcaf0; }
+        body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; font-family: 'Segoe UI', sans-serif; }
+        .dashboard-wrapper { padding: 50px 20px; }
+        .dashboard-header { text-align: center; color: white; margin-bottom: 50px; }
+        .dashboard-header h1 { font-size: 3.5rem; font-weight: 700; margin-bottom: 10px; text-shadow: 2px 2px 8px rgba(0,0,0,0.3); }
+        .dashboard-header p { font-size: 1.2rem; opacity: 0.95; }
+        .project-card { background: rgba(255,255,255,0.95); border-radius: 16px; box-shadow: 0 8px 30px rgba(0,0,0,0.2); transition: all 0.3s ease; border: none; height: 100%; display: flex; flex-direction: column; }
+        .project-card:hover { transform: translateY(-12px); box-shadow: 0 15px 50px rgba(0,0,0,0.3); }
+        .project-card .card-header { border-radius: 16px 16px 0 0; font-weight: 700; padding: 20px; border: none; }
+        .project-card .card-body { flex: 1; display: flex; flex-direction: column; padding: 25px; }
+        .project-card h3 { font-size: 1.5rem; font-weight: 700; color: #333; margin-bottom: 12px; }
+        .project-card p { color: #666; font-size: 0.95rem; line-height: 1.6; flex: 1; margin-bottom: 0; }
+        .project-card .badge { padding: 8px 14px; font-weight: 600; margin-bottom: 12px; display: inline-block; }
+        .project-card .btn { border-radius: 8px; font-weight: 600; width: 100%; margin-top: 20px; transition: all 0.3s; }
+        .project-card .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        .badge { padding: 8px 14px; font-weight: 600; }
+        .footer { text-align: center; color: white; padding-top: 40px; margin-top: 50px; border-top: 2px solid rgba(255,255,255,0.2); opacity: 0.8; }
+    </style>
+</head>
+<body>
+    <div class="dashboard-wrapper">
+        <div class="dashboard-header">
+            <h1>📊 Dashboard</h1>
+            <p>Four data structure projects in one place</p>
+        </div>
+
+        <div class="container-lg">
+            <div class="row g-4">
+                <div class="col-md-6 col-lg-3">
+                    <div class="project-card">
+                        <div class="card-header bg-primary text-white">
+                            👥 Contact Manager
+                        </div>
+                        <div class="card-body">
+                            <span class="badge bg-light text-primary">Map</span>
+                            <h3>Contact Manager</h3>
+                            <p>Store, search, edit, and delete contacts instantly with map-backed O(1) operations.</p>
+                            <a href="contacts.html" class="btn btn-primary mt-auto">→ Open</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-3">
+                    <div class="project-card">
+                        <div class="card-header bg-success text-white">
+                            📋 Task Scheduler
+                        </div>
+                        <div class="card-body">
+                            <span class="badge bg-light text-success">Queue (FIFO)</span>
+                            <h3>Task Scheduler</h3>
+                            <p>Add work items to a queue, mark the next complete, and manage tasks efficiently.</p>
+                            <a href="tasks.html" class="btn btn-success mt-auto">→ Open</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-3">
+                    <div class="project-card">
+                        <div class="card-header bg-info text-white">
+                            📍 Visitor Tracker
+                        </div>
+                        <div class="card-body">
+                            <span class="badge bg-light text-info">Set</span>
+                            <h3>Visitor Tracker</h3>
+                            <p>Track unique visitors with automatic duplicate prevention and quick removal.</p>
+                            <a href="tracker.html" class="btn btn-info mt-auto">→ Open</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-3">
+                    <div class="project-card">
+                        <div class="card-header bg-warning text-dark">
+                            📝 Text Editor
+                        </div>
+                        <div class="card-body">
+                            <span class="badge bg-light text-warning">Stacks (Undo/Redo)</span>
+                            <h3>Text Editor</h3>
+                            <p>Fast note taking with undo/redo history, character count, and export to .txt.</p>
+                            <a href="editor.html" class="btn btn-warning mt-auto">→ Open</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>🚀 Four Data Structures | One Dashboard | Pure Vanilla JavaScript</p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

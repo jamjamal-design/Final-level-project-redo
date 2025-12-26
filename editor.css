@@ -1,0 +1,6 @@
+
+.card h3 { color: #ff5e00; }
+textarea { font-family: 'Monaco', 'Courier New', monospace; font-size: 14px; line-height: 1.5; resize: vertical; }
+textarea:focus { border-color: #ff9500; background: #fffaf0; }
+.card #charCount { font-weight: 600; color: #ff5e00; margin-top: 6px; }
+button.primary:hover { background: #e64a00; }
