@@ -14,7 +14,7 @@ A comprehensive collection of four web-based projects demonstrating fundamental 
 1. **Clone or Download** this repository
 2. **Open** `index.html` in any modern web browser
 3. **Navigate** to any of the four projects from the dashboard
-4. **Start using** - no installation, setup, or server required!
+4. **Start using** - no installation, setup, or server required (all data stays in your browser via localStorage)!
 
 ```bash
 # Optional: Use a local server for better development experience
@@ -192,6 +192,7 @@ editor.saveNote();
 | **Bootstrap 5.3.2** | UI components and responsive design |
 | **Toastify.js** | Toast notifications |
 | **localStorage** | Client-side data persistence |
+| **Backend** | None (localStorage-only; no network calls) |
 
 ---
 
