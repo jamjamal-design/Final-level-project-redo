@@ -1,90 +1,20 @@
 let textStack = [""];
 let redoStack = [];
-const NOTE_API_URL = 'http://localhost:5000/api/notes';
-let useMongoDb = true;
 
 
-async function checkMongoDbConnection() {
-    try {
-        const response = await fetch('http://localhost:5000/api/health', { timeout: 3000 });
-        if (response.ok) {
-            useMongoDb = true;
-            console.log('✅ MongoDB backend connected for notes');
-            return true;
-        }
-    } catch (error) {
-        console.warn('⚠️ MongoDB backend not available, using localStorage fallback');
-        useMongoDb = false;
-    }
-    return false;
+function saveStore() {
+    localStorage.setItem('editor', JSON.stringify(textStack));
 }
 
-async function saveStore() {
-    const currentText = document.getElementById('editorArea')?.value || '';
-    
-    if (useMongoDb) {
-        try {
-            const response = await fetch(NOTE_API_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ content: currentText })
-            });
-            
-            if (!response.ok) {
-                throw new Error(`Failed to save note: ${response.statusText}`);
-            }
-            
-            console.log('✅ Note saved to MongoDB');
-        } catch (error) {
-            console.error('❌ Error saving to MongoDB, falling back to localStorage:', error);
-            localStorage.setItem('editor', JSON.stringify(textStack));
-        }
-    } else {
-        localStorage.setItem('editor', JSON.stringify(textStack));
-        console.log('💾 Note saved to localStorage');
-    }
-}
 
-async function loadStore() {
-    await checkMongoDbConnection();
-    
-    if (useMongoDb) {
+function loadStore() {
+    const raw = localStorage.getItem('editor');
+    if (raw) {
         try {
-            const response = await fetch(NOTE_API_URL, { timeout: 3000 });
-            
-            if (!response.ok) {
-                throw new Error(`Failed to load note: ${response.statusText}`);
-            }
-            
-            const data = await response.json();
-            const content = data.content || '';
-            textStack = [content];
-            console.log('✅ Note loaded from MongoDB');
+            textStack = JSON.parse(raw);
         } catch (error) {
-            console.error('❌ Error loading from MongoDB, falling back to localStorage:', error);
-            const raw = localStorage.getItem('editor');
-            if (raw) {
-                try {
-                    textStack = JSON.parse(raw);
-                    console.log('📂 Note loaded from localStorage (backup)');
-                } catch (parseError) {
-                    console.error('Error parsing localStorage:', parseError);
-                    textStack = [""];
-                }
-            }
-        }
-    } else {
-        const raw = localStorage.getItem('editor');
-        if (raw) {
-            try {
-                textStack = JSON.parse(raw);
-                console.log('📂 Note loaded from localStorage');
-            } catch (error) {
-                console.error('Error loading editor content:', error);
-                textStack = [""];
-            }
+            console.error('Error loading editor content:', error);
+            textStack = [""];
         }
     }
 }

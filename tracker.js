@@ -1,95 +1,171 @@
-let visitorSet = new Set();
+class VisitorTracker {
+    constructor() {
+        this.visitors = new Set();
+        this.attempts = new Map(); // Track duplicate attempt counts
+        this.loadFromStorage();
+    }
 
-function saveStore() {
-    const visitorArray = Array.from(visitorSet);
-    localStorage.setItem('visitors', JSON.stringify(visitorArray));
-}
+    logVisit(id, email, ip) {
+        id = (id || '').trim();
+        email = (email || '').trim().toLowerCase();
+        ip = (ip || '').trim();
 
-function loadStore() {
-    const raw = localStorage.getItem('visitors');
-    if (raw) {
-        try {
-            const parsed = JSON.parse(raw);
-            if (Array.isArray(parsed)) {
-                visitorSet = new Set(parsed);
-            } else {
-                visitorSet = new Set();
+        if (!id) {
+            return { success: false, message: 'Please enter a visitor ID' };
+        }
+
+        if (!email) {
+            return { success: false, message: 'Please enter a visitor email' };
+        }
+
+        if (!ip) {
+            return { success: false, message: 'Please enter an IP address' };
+        }
+
+        // Check if visitor ID already exists
+        const existingVisitors = Array.from(this.visitors).map(v => JSON.parse(v));
+        const idExists = existingVisitors.find(v => v.id === id);
+        if (idExists) {
+            const key = `${id}-duplicate`;
+            const count = (this.attempts.get(key) || 0) + 1;
+            this.attempts.set(key, count);
+            this.saveToStorage();
+            return { success: false, message: `⚠ Visitor ID "${id}" already exists! Attempt #${count}` };
+        }
+
+        // Check if email already exists
+        const emailExists = existingVisitors.find(v => v.email === email);
+        if (emailExists) {
+            const key = `${email}-duplicate`;
+            const count = (this.attempts.get(key) || 0) + 1;
+            this.attempts.set(key, count);
+            this.saveToStorage();
+            return { success: false, message: `⚠ Email "${email}" already registered! Attempt #${count}` };
+        }
+
+        const visitorData = JSON.stringify({ id, email, ip });
+        this.visitors.add(visitorData);
+        const key = `${id}-${email}-${ip}`;
+        this.attempts.set(key, 1);
+        this.saveToStorage();
+
+        return { success: true, message: `✓ Visitor "${id}" logged in successfully!` };
+    }
+
+    deleteVisitor(visitorData) {
+        if (this.visitors.has(visitorData)) {
+            const visitor = JSON.parse(visitorData);
+            const key = `${visitor.id}-${visitor.email}-${visitor.ip}`;
+            this.visitors.delete(visitorData);
+            this.attempts.delete(key);
+            this.saveToStorage();
+            return { success: true, message: `✓ Removed visitor "${visitor.id}" from log` };
+        }
+        return { success: false, message: 'Visitor not found' };
+    }
+
+    getAllVisitors() {
+        return Array.from(this.visitors).map(v => JSON.parse(v)).sort((a, b) => a.id.localeCompare(b.id));
+    }
+
+    getVisitorCount() {
+        return this.visitors.size;
+    }
+
+    getUniqueVisitorCount() {
+        const uniqueIds = new Set();
+        Array.from(this.visitors).forEach(v => {
+            const visitor = JSON.parse(v);
+            uniqueIds.add(visitor.id);
+        });
+        return uniqueIds.size;
+    }
+
+    getTotalAttempts() {
+        return this.attempts.size;
+    }
+
+    getDuplicateAttempts() {
+        let duplicates = 0;
+        this.attempts.forEach(count => {
+            if (count > 1) duplicates += count - 1;
+        });
+        return duplicates;
+    }
+
+    getAttemptCount(visitorData) {
+        const visitor = JSON.parse(visitorData);
+        const key = `${visitor.id}-${visitor.email}-${visitor.ip}`;
+        return this.attempts.get(key) || 0;
+    }
+
+    saveToStorage() {
+        const visitorArray = Array.from(this.visitors);
+        const attemptsObj = Object.fromEntries(this.attempts);
+        localStorage.setItem('visitors', JSON.stringify(visitorArray));
+        localStorage.setItem('visitorAttempts', JSON.stringify(attemptsObj));
+    }
+
+    loadFromStorage() {
+        const raw = localStorage.getItem('visitors');
+        const attemptsRaw = localStorage.getItem('visitorAttempts');
+        
+        if (raw) {
+            try {
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed)) {
+                    this.visitors = new Set(parsed);
+                } else {
+                    this.visitors = new Set();
+                }
+            } catch (error) {
+                console.error('Error loading visitors:', error);
+                this.visitors = new Set();
             }
-        } catch (error) {
-            console.error('Error loading visitors:', error);
-            visitorSet = new Set();
+        }
+
+        if (attemptsRaw) {
+            try {
+                const parsed = JSON.parse(attemptsRaw);
+                this.attempts = new Map(Object.entries(parsed));
+            } catch (error) {
+                console.error('Error loading attempts:', error);
+                this.attempts = new Map();
+            }
         }
     }
+
+    clearAllVisitors() {
+        this.visitors.clear();
+        this.attempts.clear();
+        this.saveToStorage();
+    }
 }
 
-function logVisit(e) {
-    if (e) e.preventDefault();
-    
-    const id = (document.getElementById('visitorId')?.value || '').trim();
-    const email = (document.getElementById('visitorEmail')?.value || '').trim().toLowerCase();
-    const ip = (document.getElementById('visitorIp')?.value || '').trim();
-    
-    if (!id) {
-        showToast('Please enter a visitor ID', 'warning');
-        return;
-    }
-    
-    if (!email) {
-        showToast('Please enter a visitor email', 'warning');
-        return;
-    }
-    
-    if (!ip) {
-        showToast('Please enter an IP address', 'warning');
-        return;
-    }
-    
-    const visitorData = JSON.stringify({ id, email, ip });
-    
-    if (visitorSet.has(visitorData)) {
-        showToast(`✓ Visitor with ID "${id}" already logged in!`, 'info');
-        return;
-    }
-    
-    visitorSet.add(visitorData);
-    saveStore();
-    renderVisitors();
-    
-    document.getElementById('visitorId').value = '';
-    document.getElementById('visitorEmail').value = '';
-    document.getElementById('visitorIp').value = '';
-    document.getElementById('visitorId').focus();
-    
-    showToast(`✓ Visitor "${id}" logged in successfully!`, 'success');
-}
-
-function deleteVisitor(visitorData) {
-    const visitor = JSON.parse(visitorData);
-    visitorSet.delete(visitorData);
-    saveStore();
-    renderVisitors();
-    showToast(`✓ Removed visitor "${visitor.id}" from log`, 'success');
-}
+const tracker = new VisitorTracker();
 
 function renderVisitors() {
     const countEl = document.getElementById('visitorCount');
+    const uniqueEl = document.getElementById('uniqueVisitors');
+    const duplicateEl = document.getElementById('duplicateAttempts');
     const list = document.getElementById('visitorsList');
     
-    if (countEl) countEl.textContent = visitorSet.size;
+    if (countEl) countEl.textContent = tracker.getVisitorCount();
+    if (uniqueEl) uniqueEl.textContent = tracker.getUniqueVisitorCount();
+    if (duplicateEl) duplicateEl.textContent = tracker.getDuplicateAttempts();
     
     if (!list) return;
     
-    if (visitorSet.size === 0) {
+    if (tracker.getVisitorCount() === 0) {
         list.innerHTML = '<p class="text-muted text-center mb-0">No visitors logged in yet. Add one to get started!</p>';
         return;
     }
-    
-    const visitors = Array.from(visitorSet).map(v => JSON.parse(v));
-    
-    visitors.sort((a, b) => a.id.localeCompare(b.id));
+
+    const visitors = tracker.getAllVisitors();
     
     list.innerHTML = visitors.map(visitor => {
         const visitorData = JSON.stringify(visitor);
+        const attemptCount = tracker.getAttemptCount(visitorData);
         
         return `
             <div class="visitor-item">
@@ -97,13 +173,54 @@ function renderVisitors() {
                     <p class="visitor-name mb-1"><strong>🆔 ID:</strong> ${escapeHtml(visitor.id)}</p>
                     <p class="contact-email mb-1"><strong>📧 Email:</strong> ${escapeHtml(visitor.email)}</p>
                     <p class="contact-phone mb-0"><strong>🌐 IP:</strong> ${escapeHtml(visitor.ip)}</p>
+                    <p class="contact-phone mb-0"><strong>🔁 Attempts:</strong> ${attemptCount}</p>
                 </div>
-                <button class="btn btn-sm btn-danger" onclick='deleteVisitor(\`${escapeHtml(visitorData)}\`)'>
+                <button class="btn btn-sm btn-danger" onclick='handleDelete(\`${escapeHtml(visitorData)}\`)'>
                     Remove
                 </button>
             </div>
         `;
     }).join('');
+}
+
+function handleDelete(visitorData) {
+    const result = tracker.deleteVisitor(visitorData);
+    showToast(result.message, result.success ? 'success' : 'danger');
+    renderVisitors();
+}
+
+function handleClearAll() {
+    if (tracker.getVisitorCount() === 0) {
+        showToast('No visitors to clear', 'info');
+        return;
+    }
+
+    const confirmClear = confirm('Are you sure you want to clear ALL visitor data? This cannot be undone.');
+    if (confirmClear) {
+        tracker.clearAllVisitors();
+        renderVisitors();
+        showToast('✓ All visitor data has been cleared!', 'success');
+    }
+}
+
+function handleLogVisit(e) {
+    if (e) e.preventDefault();
+    
+    const id = (document.getElementById('visitorId')?.value || '').trim();
+    const email = (document.getElementById('visitorEmail')?.value || '').trim();
+    const ip = (document.getElementById('visitorIp')?.value || '').trim();
+    
+    const result = tracker.logVisit(id, email, ip);
+    
+    if (result.success) {
+        document.getElementById('visitorId').value = '';
+        document.getElementById('visitorEmail').value = '';
+        document.getElementById('visitorIp').value = '';
+        document.getElementById('visitorId').focus();
+        renderVisitors();
+    }
+    
+    showToast(result.message, result.success ? 'success' : 'warning');
 }
 
 function escapeHtml(text) {
@@ -138,11 +255,15 @@ function showToast(message, type = 'info') {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    loadStore();
     renderVisitors();
     
     const form = document.getElementById('visitorForm');
     if (form) {
-        form.addEventListener('submit', logVisit);
+        form.addEventListener('submit', handleLogVisit);
+    }
+
+    const clearAllBtn = document.getElementById('clearAllBtn');
+    if (clearAllBtn) {
+        clearAllBtn.addEventListener('click', handleClearAll);
     }
 });

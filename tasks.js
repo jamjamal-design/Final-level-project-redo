@@ -1,81 +1,20 @@
 let taskQueue = [];
-const API_BASE_URL = 'http://localhost:5000/api';
-let useMongoDb = true;
 
-async function checkMongoDbConnection() {
-    try {
-        const response = await fetch(`${API_BASE_URL}/health`, { timeout: 3000 });
-        if (response.ok) {
-            useMongoDb = true;
-            console.log('✅ MongoDB backend connected');
-            return true;
-        }
-    } catch (error) {
-        console.warn('⚠️ MongoDB backend not available, using localStorage fallback');
-        useMongoDb = false;
-    }
-    return false;
+function saveStore() {
+    localStorage.setItem('tasks', JSON.stringify(taskQueue));
 }
 
-async function saveStore() {
-    if (!useMongoDb) {
-        localStorage.setItem('tasks', JSON.stringify(taskQueue));
-        console.log('💾 Tasks saved to localStorage');
-    } else {
-        localStorage.setItem('tasks', JSON.stringify(taskQueue));
-    }
-}
-
-
-
-
-
-
-async function loadStore() {
-    await checkMongoDbConnection();
-    
-    if (useMongoDb) {
+function loadStore() {
+    const raw = localStorage.getItem('tasks');
+    if (raw) {
         try {
-            const response = await fetch(`${API_BASE_URL}/tasks`, { timeout: 3000 });
-            
-            if (!response.ok) {
-                throw new Error(`Failed to load tasks: ${response.statusText}`);
-            }
-            
-            const data = await response.json();
-            taskQueue = Array.isArray(data) ? data : (data.tasks || []);
-            console.log('✅ Tasks loaded from MongoDB:', taskQueue);
-            renderTasks();
+            taskQueue = JSON.parse(raw);
         } catch (error) {
-            console.error('❌ Error loading from MongoDB, falling back to localStorage:', error);
-            const raw = localStorage.getItem('tasks');
-            if (raw) {
-                try {
-                    taskQueue = JSON.parse(raw);
-                    console.log('📂 Tasks loaded from localStorage (backup)');
-                } catch (parseError) {
-                    console.error('Error parsing localStorage:', parseError);
-                    taskQueue = [];
-                }
-            }
-            renderTasks();
+            console.error('Error loading tasks:', error);
+            taskQueue = [];
         }
-    } else {
-        const raw = localStorage.getItem('tasks');
-        if (raw) {
-            try {
-                taskQueue = JSON.parse(raw);
-                console.log('📂 Tasks loaded from localStorage');
-            } catch (error) {
-                console.error('Error loading tasks:', error);
-                taskQueue = [];
-            }
-        }
-        renderTasks();
     }
 }
-
-
 
 
 
@@ -88,7 +27,6 @@ function getTypeClass(type) {
     };
     return typeMap[type] || 'task-type-other';
 }
-
 
 
 
@@ -105,7 +43,7 @@ function getTypeEmoji(type) {
 
 
 
-async function addTask(e) {
+function addTask(e) {
     if (e) e.preventDefault();
     
     const title = (document.getElementById('taskTitle')?.value || '').trim();
@@ -118,46 +56,20 @@ async function addTask(e) {
     }
 
     const taskData = { title, type: type || 'Other', desc };
-
-    try {
-        if (useMongoDb) {
-            const response = await fetch('http://localhost:5000/api/tasks', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(taskData)
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to save to MongoDB');
-            }
-
-            const newTask = await response.json();
-            taskQueue.push(newTask);
-            showToast(`✓ Task "${title}" saved to MongoDB!`, 'success');
-        } else {
-            taskQueue.push(taskData);
-            showToast(`✓ Task "${title}" added!`, 'success');
-        }
-        
-        await saveStore();
-        renderTasks();
-        
-        document.getElementById('taskTitle').value = '';
-        document.getElementById('taskType').value = '';
-        document.getElementById('taskDesc').value = '';
-
-    } catch (error) {
-        console.error('Error adding task:', error);
-        showToast('Failed to add task', 'danger');
-    }
+    taskQueue.push(taskData);
+    saveStore();
+    renderTasks();
+    
+    document.getElementById('taskTitle').value = '';
+    document.getElementById('taskType').value = '';
+    document.getElementById('taskDesc').value = '';
+    
+    showToast(`✓ Task "${title}" added!`, 'success');
 }
 
 
 
-
-async function popTask() {
+function popTask() {
     if (taskQueue.length === 0) {
         showToast('No tasks in queue!', 'info');
         return;
@@ -165,35 +77,17 @@ async function popTask() {
 
     const taskToProcess = taskQueue[0];
     const taskTitle = typeof taskToProcess === 'string' ? taskToProcess : taskToProcess.title;
-
-    try {
-        if (useMongoDb && taskToProcess._id) {
-            const response = await fetch(`http://localhost:5000/api/tasks/${taskToProcess._id}`, {
-                method: 'DELETE'
-            });
-            
-            if (!response.ok) {
-                throw new Error('Failed to delete task from MongoDB');
-            }
-        }
-
-        taskQueue.shift();
-        await saveStore();
-        renderTasks();
-        
-        showToast(`✓ Completed: "${taskTitle}"`, 'success');
-    } catch (error) {
-        console.error('Error processing task:', error);
-        showToast('Failed to process task', 'danger');
-    }
-}
     
+    taskQueue.shift();
+    saveStore();
+    renderTasks();
+    
+    showToast(`✓ Completed: "${taskTitle}"`, 'success');
+}
 
 
 
-
-
-async function clearAllTasks() {
+function clearAllTasks() {
     if (taskQueue.length === 0) {
         showToast('Queue is already empty!', 'info');
         return;
@@ -201,60 +95,21 @@ async function clearAllTasks() {
     
     if (confirm('Are you sure you want to clear all tasks? This cannot be undone.')) {
         const count = taskQueue.length;
-        
-        try {
-            if (useMongoDb) {
-                const deletePromises = taskQueue
-                    .filter(task => task._id)
-                    .map(task => 
-                        fetch(`http://localhost:5000/api/tasks/${task._id}`, {
-                            method: 'DELETE'
-                        })
-                    );
-                await Promise.all(deletePromises);
-            }
-            
-            // Clear local array
-            taskQueue = [];
-            await saveStore();
-            renderTasks();
-            showToast(`🗑️ Cleared ${count} task(s) from queue!`, 'success');
-        } catch (error) {
-            console.error('Error clearing tasks:', error);
-            showToast('Failed to clear all tasks', 'danger');
-        }
+        taskQueue = [];
+        saveStore();
+        renderTasks();
+        showToast(`🗑️ Cleared ${count} task(s) from queue!`, 'success');
     }
 }
 
-
-
-
-
-async function deleteTask(index) {
+function deleteTask(index) {
     const task = taskQueue[index];
     const taskTitle = typeof task === 'string' ? task : task.title;
     
-    try {
-        
-        if (useMongoDb && task._id) {
-            const response = await fetch(`http://localhost:5000/api/tasks/${task._id}`, {
-                method: 'DELETE'
-            });
-            
-            if (!response.ok) {
-                throw new Error('Failed to delete from MongoDB');
-            }
-        }
-        
-       
-        taskQueue.splice(index, 1);
-        await saveStore();
-        renderTasks();
-        showToast(`✓ Removed "${taskTitle}" from queue!`, 'success');
-    } catch (error) {
-        console.error('Error deleting task:', error);
-        showToast('Failed to delete task', 'danger');
-    }
+    taskQueue.splice(index, 1);
+    saveStore();
+    renderTasks();
+    showToast(`✓ Removed "${taskTitle}" from queue!`, 'success');
 }
 
 
@@ -286,7 +141,7 @@ function renderTasks() {
         
         return `
             <div class="task-item">
-                <span class="task-type-badge ${typeClass}${' '}${emoji} ${type}</span>
+                <span class="task-type-badge ${typeClass}">${emoji} ${type}</span>
                 <p class="task-title">${escapeHtml(title)}</p>
                 ${desc ? `<p class="task-desc">${escapeHtml(desc)}</p>` : ''}
                 <div class="mt-2">
@@ -298,10 +153,6 @@ function renderTasks() {
         `;
     }).join('');
 }
-
-
-
-
 
 function escapeHtml(text) {
     if (text === null || text === undefined) return '';
@@ -315,10 +166,6 @@ function escapeHtml(text) {
     };
     return text.replace(/[&<>"']/g, m => map[m]);
 }
-
-
-
-
 
 function showToast(message, type = 'info') {
     const background = {
@@ -341,7 +188,6 @@ function showToast(message, type = 'info') {
 document.addEventListener('DOMContentLoaded', () => {
     loadStore();
     renderTasks();
-    
     
     const form = document.getElementById('taskForm');
     if (form) {
